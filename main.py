@@ -25,24 +25,46 @@ def format_phone(phone):
     phone = re.sub(phone_pattern, format_phone_pattern, phone)
     return phone
 
-merged_contacts = {}
+def merge_contacts(contacts_list):
+    merged_contacts = {}
 
-for i in range (1, len(contacts_list)):
-    contacts_list[i] = format_surname(contacts_list[i])
-    contacts_list[i][5] = format_phone(contacts_list[i][5])
+    for contact in contacts_list:
+        key = (contact[0], contact[1])
 
-    key = (contacts_list[i][0], contacts_list[i][1])
-    if key in merged_contacts:
-        exist = merged_contacts[key]
-        for j in range(len(contacts_list[i])):
-            if contacts_list[i][j] and not exist[j]:
-                exist[j] = contacts_list[i][j]
-    else:
-        merged_contacts[key] = contacts_list[i]
+        if key in merged_contacts:
+            existing_contact = merged_contacts[key]
+            for i in range(len(contact)):
+                if contact[i] and not existing_contact[i]:
+                    existing_contact[i] = contact[i]
+        else:
+            merged_contacts[key] = contact
 
-result = [contacts_list[0]]
-result.extend(merged_contacts.values())
+    return list(merged_contacts.values())
 
-with open("phonebook.csv", "w", encoding="utf-8") as f:
-  datawriter = csv.writer(f, delimiter=',')
-  datawriter.writerows(result)
+def process_contacts(contacts_list):
+    header = contacts_list[0]
+    raw_contacts = contacts_list[1:]
+
+    formatted_contacts = []
+    for contact in raw_contacts:
+        contact = format_surname(contact)
+        contact[5] = format_phone(contact[5])
+        formatted_contacts.append(contact)
+
+    merged = merge_contacts(formatted_contacts)
+    return [header] + merged
+
+def read_csv(file_path):
+    with open(file_path, encoding="utf-8") as f:
+        rows = csv.reader(f, delimiter=",")
+        return list(rows)
+
+def write_csv(file_path, data):
+    with open(file_path, "w", encoding="utf-8") as f:
+        datawriter = csv.writer(f, delimiter=",")
+        datawriter.writerows(data)
+
+if __name__ == "__main__":
+    contacts_list = read_csv("phonebook_raw.csv")
+    result = process_contacts(contacts_list)
+    write_csv("phonebook.csv", result)
